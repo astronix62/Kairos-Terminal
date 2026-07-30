@@ -1,79 +1,176 @@
 # KAIROS — Discipline Cockpit
 
-> **Mesurer le trader, pas le marché.**
-> Application de structuration de la discipline, de la qualité du processus et — seulement ensuite — de la performance financière.
+> **Mesurer le trader, pas le marché.**  
+> KAIROS est une application web de discipline trading : elle structure la préparation, mesure la qualité du processus, aide à documenter les décisions et transforme les données comportementales en axes de progression concrets.
 
 ---
 
-## 🚀 Démarrage
+## 🎯 Objectif principal
 
-1. Téléchargez `kairos-cockpit.html`
-2. Ouvrez-le dans un navigateur moderne (Chrome, Firefox, Safari, Edge) — double-clic suffit
-3. L'application se lance avec **75 jours de données de démonstration** réalistes (améliorables et dégradées volontairement pour montrer les patterns : vendredi fragiles, impulsivité d'après 15h, fatigue…). Paramètres ⚙ → *Tout effacer* pour repartir de zéro avec vos vraies données.
+KAIROS ne cherche pas à prédire le marché ni à générer des signaux.  
+Son rôle est de faciliter la réflexion, accélérer la prise de recul et rendre visibles les comportements qui améliorent ou dégradent l'exécution.
 
-> ℹ️ **Dans l'aperçu Arena**, les données vivent en mémoire (le sandbox bloque `localStorage`). Ouvrez le fichier directement dans votre navigateur : tout est alors **sauvegardé localement et persistant**.
+La philosophie reste simple :
+
+1. **Préparer** la journée.
+2. **Exécuter** uniquement selon le plan.
+3. **Documenter** à chaud.
+4. **Analyser** sans se noyer dans les chiffres.
+5. **Corriger un seul levier prioritaire à la fois.**
+
+L'application doit rester rapide, lisible et non prise de tête. Les nouvelles options sont donc pensées pour être utiles, désactivables et non bloquantes.
 
 ---
 
-## 📦 Ce qui est livré
+## ✅ Fonctionnalités déjà présentes
 
-Un **fichier HTML unique et autonome** (aucune dépendance, aucun CDN, fonctionne hors-ligne) qui implémente l'intégralité du cahier des charges :
+| Module | Rôle |
+|---|---|
+| **Dashboard** | Vue de focus : score du jour, checklist, objectifs, suggestion du coach, actions récentes. |
+| **Calendrier intelligent** | Planification des journées : trading, analyse, backtest, formation, repos, mixte. Alertes contextuelles non bloquantes. |
+| **Journal double flux** | Entrées de trading et d'analyse : setup, émotion, énergie, respect du plan, impulsivité, notes, screenshots. |
+| **Discipline Score** | Score orienté processus : préparation, journal, plan, impulsivité, exécution, résultat financier marginal. |
+| **Statistiques comportementales** | Patterns par horaires, jours, setups A/B/C, impulsivité, respect du plan, corrélations. |
+| **Progression** | Suivi sur 60 jours, moyenne hebdomadaire, comparaison 30 jours vs période précédente. |
+| **Profil trader** | Identité quantifiée : score global, streaks, drawdown, forces/faiblesses. |
+| **Coach IA hybride** | Moteur local de règles + option LLM connectée si clé API configurée. |
+| **Paramètres & données** | Profil, plan de trading, clé API, export/import JSON, export CSV, réinitialisation. |
+| **Responsive mobile/tablette** | Interface adaptée aux petits écrans avec navigation mobile et modales optimisées. |
 
-| Bloc du cahier des charges | Statut | Emplacement |
-|---|---|---|
-| a) Dashboard focus & clarté | ✅ | Vue *Dashboard* — score du jour, état de la journée, objectifs, checklist, accès journal, actions récentes |
-| b) Calendrier intelligent | ✅ | Vue *Calendrier* — 6 types de journées, alertes pop-up contextuelles non bloquantes (vendredi trading, 3e jour consécutif, journée mixte) |
-| c) Journal double flux | ✅ | Vue *Journal* — trading / analyse, screenshots compressés, contexte, setup, émotion, énergie, plan, impulsivité, notes |
-| d) Discipline Score (80/10/10) | ✅ | Vue *Scoring* — détail process/exécution/résultat, agrégation jour → semaine → mois |
-| e) Profil trader | ✅ | Vue *Profil* — identité quantifiée : score global, streaks, drawdown max, meilleure période, forces/faiblesses |
-| f) Statistiques comportementales | ✅ | Vue *Statistiques* — winrate (non central), profit factor, qualité setups A/B/C, horaires, jours, corrélations erreurs × conditions |
-| g) Centre de progression | ✅ | Vue *Progression* — 60 jours, moyennes 12 semaines, comparatif 30 j vs période précédente |
-| Moteur IA hybride | ✅ | Vue *Coach IA* — proactif (interventions contextuelles) + réactif (conversation) + rapports quotidien/hebdo/mensuel |
-| Temps réel structurant | ✅ | Horloge live, phase de session (Europe/creux/US/fin), dashboard et coaching contextualisés, rapport quotidien auto à 20h |
-| Non-blocage | ✅ | Aucune action n'est jamais empêchée : toasts, rappels du plan (⛨ dans la barre haute), alertes statistiques |
-| Design cockpit sombre | ✅ | Thème sombre profond, cartes minimalistes, hiérarchie forte, peu d'éléments simultanés |
+---
 
-### Formule du Discipline Score
+## 🎨 Personnalisation ajoutée
+
+Une importance particulière est donnée à la personnalisation, sans transformer l'application en usine à gaz.
+
+Dans **Paramètres → Apparence & personnalisation**, l'utilisateur peut désormais modifier l'ambiance globale de l'application.
+
+### Thèmes disponibles
+
+| Thème | Description |
+|---|---|
+| **basique** | Thème original de KAIROS : sombre, turquoise, analytique. |
+| **Atlantique** | Bleu profond, frais et très lisible. |
+| **Graphite** | Sobre, neutre, peu saturé, confortable pour longues sessions. |
+| **Améthyste** | Violet calme, plus mental et introspectif. |
+| **Forêt** | Vert profond, stable et reposant. |
+| **Ambre** | Ambiance chaude, concentrée, moins clinique. |
+
+Le thème actuel d'origine porte maintenant le nom **basique**.
+
+### Couleurs personnalisables
+
+L'utilisateur peut aussi activer ses propres couleurs :
+
+- accent principal ;
+- accent secondaire ;
+- fond ;
+- panneaux/cartes.
+
+Un bouton permet de réinitialiser rapidement les couleurs du thème choisi.
+
+### Densité et effets
+
+Options ajoutées :
+
+- **Densité confort** : interface plus respirante.
+- **Densité compacte** : plus d'informations visibles à l'écran.
+- **Effets normaux** : ambiance cockpit complète.
+- **Effets discrets** : moins de glow, moins de flou, moins d'animations.
+
+Ces options permettent d'adapter KAIROS selon le support, la fatigue visuelle ou la préférence personnelle.
+
+---
+
+## 🔔 Options activables / désactivables
+
+Dans **Paramètres → Interventions & rappels**, certaines interventions automatiques peuvent être contrôlées :
+
+- alertes contextuelles du calendrier ;
+- message du coach à l'ouverture ;
+- rappel du rapport quotidien à 20h.
+
+Le principe reste inchangé : **aucune action n'est bloquée**. KAIROS informe, rappelle et mesure, mais ne force pas.
+
+---
+
+## 🧮 Discipline Score
+
+Formule actuelle :
+
+```text
+Processus   /80 : checklist + journal complété + plan respecté + absence d'impulsion
+Exécution   /10 : qualité du setup A/B/C ou profondeur de l'analyse
+Résultat    /10 : volontairement marginal et secondaire
 ```
-Processus   /80 : checklist (24) + journal complété (12) + plan respecté (26) + absence d'impulsion (18)
-Exécution   /10 : qualité du setup A/B/C (trade) ou profondeur de l'analyse documentée
-Résultat    /10 : volontairement marginal (et neutre les jours sans trade)
+
+Le score ne cherche pas à féliciter le P&L. Il sert à identifier si le trader a respecté ce qu'il contrôle réellement.
+
+---
+
+## 🤖 Coach IA
+
+Deux niveaux de fonctionnement :
+
+### 1. Moteur local
+
+Toujours disponible. Il analyse les données enregistrées et produit :
+
+- rapports quotidiens, hebdomadaires et mensuels ;
+- recommandations contextuelles ;
+- détection de patterns comportementaux ;
+- identification de forces/faiblesses ;
+- rappel du levier prioritaire.
+
+### 2. Mode LLM optionnel
+
+Depuis les paramètres, une clé API compatible OpenAI peut être renseignée.  
+La clé reste stockée localement dans le navigateur. Sans clé, l'application reste utilisable.
+
+---
+
+## 🧭 Roadmap validée, hors PWA pour le moment
+
+L'application n'est pas encore transformée en application installable/PWA. Cette étape est volontairement gardée pour plus tard.
+
+Les évolutions fonctionnelles validées pour rester dans le cœur de KAIROS sont :
+
+1. **Suivi détaillé des règles violées** au lieu d'un simple “plan respecté / non respecté”.
+2. **Ticket de pré-engagement avant trade** pour mesurer l'écart entre intention et exécution.
+3. **Risk Guard non bloquant** : perte max, nombre de trades, heure limite, pertes consécutives.
+4. **Protocole de pause / reset** après perte, impulsivité ou dérive émotionnelle.
+5. **Levier prioritaire de la semaine** affiché clairement sur le dashboard.
+6. **Revue guidée de fin de journée** avec synthèse rapide et action pour demain.
+7. **Brouillons automatiques mobile** pour ne jamais perdre une entrée en cours.
+8. **Recherche et filtres avancés dans le journal**.
+9. **Suivi en R-multiple** en complément du P&L en euros.
+10. **Mode Focus Session** pour n'afficher que l'essentiel pendant le marché.
+
+Ces ajouts devront respecter une règle : **ne pas surcharger l'interface**. Les fonctions avancées doivent rester simples, rapides et configurables.
+
+---
+
+## 📁 Structure des fichiers
+
+```text
+index.html              Application principale
+login.html              Page de connexion
+css/style.css           Thème, responsive, personnalisation
+js/kairos-engine.js     Logique métier, vues, scoring, coach, paramètres
+js/persistence.js       Hydratation/sauvegarde Supabase
+js/auth.js              Authentification
+js/supabase-client.js   Client Supabase
+README.md               Présentation et roadmap
 ```
 
-### Le moteur IA
-Deux couches :
-- **Moteur de règles local (toujours actif)** : analyse rétrospective, détection de patterns (« trades après 15h : winrate −X pts »), recommandation du type de journée optimal, rapports narratifs expliquant *ce qui s'améliore, ce qui se dégrade, pourquoi, et le levier prioritaire*.
-- **Mode LLM (optionnel)** : Paramètres ⚙ → clé API (compatible OpenAI : endpoint/modèle configurables, fonctionne avec OpenAI, OpenRouter, Mistral, Ollama local…). Le coach envoie alors vos données temps réel (date, heure, phase de session, scores, stats, dernières entrées, règles du plan) comme contexte. Sans clé, tout reste pleinement fonctionnel en local.
-
 ---
 
-## 🔧 Adaptations techniques (et comment brancher la cible réelle)
+## 🧠 Philosophie produit
 
-Le cahier des charges mentionnait **Supabase** et un **moteur IA connecté**. Dans cet environnement de livraison, j'ai adapté sans rien sacrifier aux fonctionnalités :
+KAIROS doit rester un cockpit de discipline, pas un tableau de bord surchargé.
 
-| Cible du cahier des charges | Implémentation livrée | Chemin de migration |
-|---|---|---|
-| Base centrale **Supabase** | `localStorage` (persistance navigateur) + export/import **JSON** et export **CSV** du journal | Le modèle de données (`state = {profile, days, entries, settings}`) est déjà structuré en tables. Créer dans Supabase : `profiles`, `days(date, type, objectives, checklist)`, `entries(...)`, puis remplacer `loadState()/saveState()` par des appels PostgREST — toute la logique métier reste inchangée |
-| **IA** toujours connectée | Moteur de règles embarqué + slot LLM optionnel | Renseigner la clé API dans ⚙ (stockée uniquement en local). Pour la proactivité temps réel côté serveur : cron Supabase Edge Function qui génère les rapports et les pousse (notification) |
-| **Screenshots** | Import manuel, compression canvas automatique (max 900 px, JPEG 72 %) stockée localement | Brancher un bucket Supabase Storage : remplacer l'affectation `shot = dataURL` par un `upload()` |
-| Temps réel | Horloge + `Date` locale, conscience permanente date/heure/jour/phase de session | Identique en prod ; ajouter fuseau horaire marché si multi-places |
+Les réglages existent pour adapter l'application à l'utilisateur, pas pour lui ajouter de la charge mentale. L'objectif reste :
 
----
+> **ouvrir, comprendre vite, agir juste, progresser proprement.**
 
-## 🧭 Philosophie d'utilisation
-
-1. **Ouverture** → le Dashboard impose le focus : score, checklist, suggestion du coach. Rien d'autre.
-2. **Avant le marché** → checklist de préparation (24 pts de score à eux seuls).
-3. **Pendant** → le système n'empêche rien ; il rappelle le plan (bouton ⛨) et signale les créneaux à risque en pop-up.
-4. **Après** → journal à chaud (trade **ou** analyse : une journée sans position reste mesurée).
-5. **Soir / semaine / mois** → rapports du coach : pas une liste de chiffres, une explication + **un seul levier prioritaire**.
-
-> Le trading est traité comme une **conséquence indirecte de la qualité du processus**.
-
----
-
-## 📁 Fichiers
-- `kairos-cockpit.html` — l'application complète
-- `README.md` — ce document
-
-*KAIROS v1.0 — Process 80 · Exécution 10 · Résultat 10.*
+*KAIROS — Process 80 · Exécution 10 · Résultat 10.*
