@@ -77,6 +77,8 @@ async function hydrateStateFromSupabase() {
       apiKey: localStorage.getItem('kairos_llm_key') || '', // la clé reste locale, jamais en base
       model: (profileData.settings && profileData.settings.model) || 'gpt-4o-mini',
       endpoint: (profileData.settings && profileData.settings.endpoint) || 'https://api.openai.com/v1/chat/completions',
+      appearance: (profileData.settings && profileData.settings.appearance) || undefined,
+      features: (profileData.settings && profileData.settings.features) || undefined,
       demo: false,
     },
     ui: (profileData.ui_state && Object.keys(profileData.ui_state).length) ? profileData.ui_state : { calMonth: todayISO().slice(0, 7) },
@@ -113,7 +115,12 @@ async function saveState() {
     await supabaseClient.from('profile').update({
       name: state.profile.name,
       rules: state.profile.rules,
-      settings: { model: state.settings.model, endpoint: state.settings.endpoint },
+      settings: {
+        model: state.settings.model,
+        endpoint: state.settings.endpoint,
+        appearance: state.settings.appearance,
+        features: state.settings.features,
+      },
       ui_state: state.ui,
     }).eq('user_id', currentUserId);
 
