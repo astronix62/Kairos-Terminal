@@ -594,20 +594,25 @@ function localReply(m){
    UI — toasts (pop-ups non bloquants), modales, graphiques SVG
    ═══════════════════════════════════════════════════════════════ */
 function toast(html,sev="info",ttl=9000){
+  const box=$("#toasts");if(!box)return;
   const el=document.createElement("div");
   el.className="toast "+(sev==="info"?"":sev);
   el.innerHTML=`<span class="tx" onclick="this.parentElement.remove()">✕</span>`+html;
-  $("#toasts").appendChild(el);
+  box.appendChild(el);
+  while(box.children.length>4)box.firstElementChild.remove();
   setTimeout(()=>{if(el.parentElement){el.style.opacity="0";el.style.transition="opacity .4s";setTimeout(()=>el.remove(),400);}},ttl);
 }
 function openModal(title,bodyHTML,footHTML,wide){
-  $("#modalRoot").innerHTML=`<div class="modal-bg" id="mBg"><div class="modal${wide?" wide":""}">
-    <div class="modal-head"><h3>${title}</h3><button class="x-btn" id="mX">✕</button></div>
+  const root=$("#modalRoot");
+  root.innerHTML=`<div class="modal-bg" id="mBg"><div class="modal${wide?" wide":""}" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="modal-head"><h3 id="mTitle">${title}</h3><button class="x-btn" id="mX" aria-label="Fermer">✕</button></div>
     <div class="modal-body">${bodyHTML}</div>${footHTML?`<div class="modal-foot">${footHTML}</div>`:""}
   </div></div>`;
-  const close=()=>$("#modalRoot").innerHTML="";
+  document.body.classList.add("modal-open");
+  enhanceResponsiveTables(root);
+  const close=()=>{root.innerHTML="";document.body.classList.remove("modal-open");};
   $("#mX").onclick=close;
-  $("#mBg").addEventListener("mousedown",e=>{if(e.target.id==="mBg")close();});
+  $("#mBg").addEventListener("pointerdown",e=>{if(e.target.id==="mBg")close();});
   document.addEventListener("keydown",function h(e){if(e.key==="Escape"){close();document.removeEventListener("keydown",h);}});
   return close;
 }
@@ -677,18 +682,34 @@ const NAV=[
 ];
 function buildSidebar(){
   $("#sidebar").innerHTML=NAV.map(([id,label,path])=>
-    `<button class="nav-item" data-view="${id}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg><span>${label}</span></button>`
+    `<button type="button" class="nav-item" data-view="${id}" title="${label}" aria-label="${label}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg><span>${label}</span></button>`
   ).join("")+`<div class="side-foot"><b>KAIROS v1.0</b><br>Mesure le trader,<br>pas le marché.<br><span style="color:var(--accent)">Process 80 · Exéc 10 · P&L 10</span></div>`;
-  $$(".nav-item").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+  $$(".nav-item").forEach(b=>b.onclick=()=>{showView(b.dataset.view);b.blur();});
 }
 let currentView="dashboard";
 function showView(v){
   currentView=v;
-  $$(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===v));
+  $$(".nav-item").forEach(b=>{
+    const on=b.dataset.view===v;
+    b.classList.toggle("active",on);
+    b.setAttribute("aria-current",on?"page":"false");
+  });
   $$(".view").forEach(s=>s.classList.remove("active"));
   $("#view-"+v).classList.add("active");
   RENDER[v]();
+  enhanceResponsiveTables($("#view-"+v));
   $("#main").scrollTop=0;
+  if(window.matchMedia&&window.matchMedia("(max-width: 720px)").matches)window.scrollTo(0,0);
+}
+function enhanceResponsiveTables(root=document){
+  const scope=root||document;
+  [...scope.querySelectorAll("table.tbl")].forEach(tbl=>{
+    if(tbl.parentElement&&tbl.parentElement.classList.contains("table-scroll"))return;
+    const wrap=document.createElement("div");
+    wrap.className="table-scroll";
+    tbl.parentNode.insertBefore(wrap,tbl);
+    wrap.appendChild(tbl);
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1441,19 +1462,20 @@ function openSettings(){
    RAPPEL DU PLAN (pop-up non bloquant)
    ═══════════════════════════════════════════════════════════════ */
 function showPlanReminder(){
-  openModal("Plan de trading — rappel",`
+  const close=openModal("Plan de trading — rappel",`
     <div style="font-size:13.5px;line-height:2.1;color:var(--txt2)">
       ${state.profile.rules.map((r,i)=>`<div><span class="mono t-acc" style="font-size:12px">${pad(i+1)}</span> · ${esc(r)}</div>`).join("")}
     </div>
     <div class="sep"></div>
     <div style="font-size:12px;color:var(--muted)">Ce système ne bloque rien. Il mesure si ces règles ont été respectées — c'est tout l'enjeu du Discipline Score.</div>`,
-    `<button class="btn primary" onclick="document.getElementById('modalRoot').innerHTML=''">Reçu</button>`);
+    `<button class="btn primary" id="ackPlan">Reçu</button>`);
+  $("#ackPlan").onclick=close;
 }
 
 /* ═══════════════════════════════════════════════════════════════
    BOOT
    ═══════════════════════════════════════════════════════════════ */
-function refresh(){RENDER[currentView]();}
+function refresh(){RENDER[currentView]();enhanceResponsiveTables($("#view-"+currentView));}
 
 // boot() est désormais async : on hydrate `state` depuis Supabase avant
 // tout rendu. Le reste de la logique est inchangé par rapport à l'original.
