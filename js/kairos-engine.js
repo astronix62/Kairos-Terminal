@@ -1,3 +1,4 @@
+
 "use strict";
 /* ═══════════════════════════════════════════════════════════════
    KAIROS — Discipline Cockpit
@@ -38,12 +39,12 @@ let state=null; // hydraté de façon asynchrone dans boot(), voir fin de fichie
 
 /* ---------- Référentiels ---------- */
 const DAY_TYPES={
-  trading:{label:"Trading",cls:"type-trading",color:"#38e1c6"},
-  analyse:{label:"Analyse",cls:"type-analyse",color:"#5aa7ff"},
-  backtest:{label:"Backtest",cls:"type-backtest",color:"#9d8cff"},
-  formation:{label:"Formation",cls:"type-formation",color:"#f5b544"},
-  repos:{label:"Repos",cls:"type-repos",color:"#6e7f9e"},
-  mix:{label:"Mixte",cls:"type-mix",color:"#3fd68c"},
+  trading:{label:"Trading",cls:"type-trading",color:"var(--accent)"},
+  analyse:{label:"Analyse",cls:"type-analyse",color:"var(--blue)"},
+  backtest:{label:"Backtest",cls:"type-backtest",color:"var(--violet)"},
+  formation:{label:"Formation",cls:"type-formation",color:"var(--warn)"},
+  repos:{label:"Repos",cls:"type-repos",color:"var(--muted)"},
+  mix:{label:"Mixte",cls:"type-mix",color:"var(--good)"},
 };
 const CHECKLIST_TEMPLATE=[
   "Revue macro & calendrier économique",
@@ -63,11 +64,100 @@ const DEFAULT_RULES=[
   "Pas de trade le vendredi après 15h00",
 ];
 
+
+/* ---------- Personnalisation ---------- */
+const DEFAULT_APPEARANCE={
+  theme:"basique",
+  custom:false,
+  accent:"",accent2:"",bg:"",panel:"",
+  density:"comfort",      // comfort | compact
+  effects:"normal",       // normal | low
+};
+const DEFAULT_FEATURES={
+  contextualAlerts:true,
+  openingCoach:true,
+  dailyReport:true,
+};
+const THEMES={
+  basique:{label:"basique",desc:"Le thème original KAIROS : sombre, turquoise, analytique.",vars:{
+    "--bg":"#060a12","--bg2":"#0a101c","--panel":"#0d1524","--panel2":"#111c30","--panel3":"#16233c",
+    "--line":"#1b2a45","--line2":"#24365a","--txt":"#e8eef9","--txt2":"#b9c6dd","--muted":"#6e7f9e","--faint":"#44546f",
+    "--accent":"#38e1c6","--accent2":"#22b8cf","--accent-dim":"rgba(56,225,198,.12)",
+    "--good":"#3fd68c","--warn":"#f5b544","--bad":"#f4696f","--violet":"#9d8cff","--blue":"#5aa7ff",
+  }},
+  atlantique:{label:"Atlantique",desc:"Bleu profond, frais, très lisible.",vars:{
+    "--bg":"#031019","--bg2":"#071823","--panel":"#0a2030","--panel2":"#0f2b3e","--panel3":"#14394f",
+    "--line":"#1b4159","--line2":"#29627b","--txt":"#e9f7ff","--txt2":"#b9d5e4","--muted":"#7096aa","--faint":"#466a7d",
+    "--accent":"#35d8ff","--accent2":"#2ee6a6","--accent-dim":"rgba(53,216,255,.12)",
+    "--good":"#55e6a5","--warn":"#f4bd57","--bad":"#ff6b7d","--violet":"#a996ff","--blue":"#55bdff",
+  }},
+  graphite:{label:"Graphite",desc:"Neutre, sobre, peu saturé pour longues sessions.",vars:{
+    "--bg":"#08090d","--bg2":"#0d0f14","--panel":"#12151d","--panel2":"#191d27","--panel3":"#212633",
+    "--line":"#2a3140","--line2":"#3a4559","--txt":"#edf1f7","--txt2":"#c1cad8","--muted":"#7c8798","--faint":"#505a69",
+    "--accent":"#a9bdd6","--accent2":"#6f8fb8","--accent-dim":"rgba(169,189,214,.13)",
+    "--good":"#58d68d","--warn":"#f2bd5c","--bad":"#ef6f78","--violet":"#ad9cff","--blue":"#79b8ff",
+  }},
+  amethyste:{label:"Améthyste",desc:"Violet calme, idéal pour une ambiance plus mentale.",vars:{
+    "--bg":"#0c0714","--bg2":"#130d20","--panel":"#1a122c","--panel2":"#22173a","--panel3":"#302051",
+    "--line":"#33254e","--line2":"#49356d","--txt":"#f1eaff","--txt2":"#d0c2ec","--muted":"#8e7bad","--faint":"#5d4e78",
+    "--accent":"#b99cff","--accent2":"#f07cff","--accent-dim":"rgba(185,156,255,.13)",
+    "--good":"#56d99b","--warn":"#f4bd57","--bad":"#ff6c86","--violet":"#c5a7ff","--blue":"#7fb7ff",
+  }},
+  foret:{label:"Forêt",desc:"Vert profond, stable et reposant.",vars:{
+    "--bg":"#07110d","--bg2":"#0b1a14","--panel":"#10251b","--panel2":"#153422","--panel3":"#1e4a31",
+    "--line":"#234432","--line2":"#326a4a","--txt":"#ebfff3","--txt2":"#bdd9c9","--muted":"#79a38c","--faint":"#4c6d5c",
+    "--accent":"#72e39f","--accent2":"#38d3b1","--accent-dim":"rgba(114,227,159,.12)",
+    "--good":"#64e39b","--warn":"#e8bd57","--bad":"#f26c73","--violet":"#a998ff","--blue":"#78b9ff",
+  }},
+  ambre:{label:"Ambre",desc:"Chaud, concentré, moins clinique.",vars:{
+    "--bg":"#120c05","--bg2":"#1a1208","--panel":"#24190d","--panel2":"#312112","--panel3":"#442e18",
+    "--line":"#4a351f","--line2":"#6a4a2a","--txt":"#fff4e6","--txt2":"#e2cbb1","--muted":"#aa8661","--faint":"#73573a",
+    "--accent":"#ffbf5b","--accent2":"#ff7f50","--accent-dim":"rgba(255,191,91,.13)",
+    "--good":"#64d990","--warn":"#ffc65d","--bad":"#ff716d","--violet":"#bd9bff","--blue":"#76b8ff",
+  }},
+};
+function mergeDefaults(obj,defs){return {...defs,...(obj||{})};}
+function normalizeSettings(){
+  const base={apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:false,appearance:{...DEFAULT_APPEARANCE},features:{...DEFAULT_FEATURES}};
+  state.settings={...base,...(state.settings||{})};
+  state.settings.appearance=mergeDefaults(state.settings.appearance,DEFAULT_APPEARANCE);
+  state.settings.features=mergeDefaults(state.settings.features,DEFAULT_FEATURES);
+  if(!THEMES[state.settings.appearance.theme])state.settings.appearance.theme="basique";
+}
+function hexToRgb(hex){
+  const h=String(hex||"").replace("#","").trim();
+  if(!/^[0-9a-f]{6}$/i.test(h))return null;
+  return{r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};
+}
+function rgba(hex,a){const c=hexToRgb(hex);return c?`rgba(${c.r},${c.g},${c.b},${a})`:hex;}
+function applyAppearance(){
+  if(!state||!state.settings)return;
+  normalizeSettings();
+  const ap=state.settings.appearance;
+  const theme=THEMES[ap.theme]||THEMES.basique;
+  const root=document.documentElement;
+  Object.entries(theme.vars).forEach(([k,v])=>root.style.setProperty(k,v));
+  if(ap.custom){
+    if(ap.accent){root.style.setProperty("--accent",ap.accent);root.style.setProperty("--accent-dim",rgba(ap.accent,.13));}
+    if(ap.accent2)root.style.setProperty("--accent2",ap.accent2);
+    if(ap.bg)root.style.setProperty("--bg",ap.bg);
+    if(ap.panel)root.style.setProperty("--panel",ap.panel);
+  }
+  document.body.classList.toggle("compact-ui",ap.density==="compact");
+  document.body.classList.toggle("low-effects",ap.effects==="low");
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute("content",ap.custom&&ap.bg?ap.bg:theme.vars["--bg"]);
+}
+function featureOn(key){return !state||!state.settings||!state.settings.features||state.settings.features[key]!==false;}
+function themeSwatches(vars){
+  return ["--bg","--panel","--accent","--accent2"].map(k=>`<i style="background:${vars[k]}"></i>`).join("");
+}
+
 function freshState(){
   return{
     profile:{name:"Trader",rules:DEFAULT_RULES.slice()},
     days:{}, entries:[],
-    settings:{apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:true},
+    settings:{apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:true,appearance:{...DEFAULT_APPEARANCE},features:{...DEFAULT_FEATURES}},
     ui:{calMonth:todayISO().slice(0,7)},
   };
 }
@@ -619,13 +709,13 @@ function ringSVG(score,size=132,stroke=11){
   const r=(size-stroke)/2,c=2*Math.PI*r,off=c*(1-clamp(score,0,100)/100);
   const col=scoreColor(score);
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#16233c" stroke-width="${stroke}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--panel3)" stroke-width="${stroke}"/>
     <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="${stroke}"
       stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"
       transform="rotate(-90 ${size/2} ${size/2})" style="transition:stroke-dashoffset .8s ease"/>
   </svg>`;
 }
-function lineChart(values,{w=520,h=150,color="#38e1c6",max=100,min=0}={}){
+function lineChart(values,{w=520,h=150,color="var(--accent)",max=100,min=0}={}){
   if(values.length<2)return `<div class="muted" style="font-size:12px;padding:20px 0">Données insuffisantes.</div>`;
   const padL=6,padR=6,padT=10,padB=6;
   const span=(max-min)||1;
@@ -646,7 +736,7 @@ function lineChart(values,{w=520,h=150,color="#38e1c6",max=100,min=0}={}){
     <circle cx="${pts[pts.length-1][0]}" cy="${pts[pts.length-1][1]}" r="3.5" fill="${color}"/>
   </svg>`;
 }
-function barChart(data,{w=520,h=170,color="#38e1c6",max=100}={}){
+function barChart(data,{w=520,h=170,color="var(--accent)",max=100}={}){
   const n=data.length;if(!n)return "";
   const bw=Math.min(54,(w-40)/n-14);
   const gap=(w-40-bw*n)/(n-1||1);
@@ -758,7 +848,7 @@ RENDER.dashboard=function(){
           </div>
           <div style="margin-bottom:10px">
             <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span class="muted">Exécution / setup</span><span class="mono">${s.exec}/10</span></div>
-            <div class="progress"><i style="width:${s.exec/10*100}%;background:linear-gradient(90deg,#5aa7ff,#9d8cff)"></i></div>
+            <div class="progress"><i style="width:${s.exec/10*100}%;background:linear-gradient(90deg,var(--blue),var(--violet))"></i></div>
           </div>
           <div>
             <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span class="muted">Résultat</span><span class="mono">${s.result}/10</span></div>
@@ -812,7 +902,7 @@ RENDER.dashboard=function(){
   <div class="grid g2" style="margin-top:16px">
     <div class="card">
       <div class="card-title">Discipline Score — 30 derniers jours <span class="mini">moyenne : ${last30.length?Math.round(avg(last30)):"—"}</span></div>
-      ${lineChart(last30,{color:"#38e1c6"})}
+      ${lineChart(last30,{color:"var(--accent)"})}
     </div>
     <div class="card">
       <div class="card-title">Rappel du plan de trading</div>
@@ -886,6 +976,7 @@ RENDER.calendar=function(){
 };
 
 function calendarWarnings(iso,type){
+  if(!featureOn("contextualAlerts"))return;
   const wd=dowOf(iso);const t=todayISO();
   if(type==="trading"&&wd===5)toast("⚠ <b>Vendredi trading</b> — ton historique montre une dégradation récurrente ce jour. Analyse ou repos statistiquement plus rentables.","warn");
   if(type==="trading"&&iso>t){
@@ -1212,8 +1303,8 @@ RENDER.stats=function(){
     <div class="card tight"><div class="stat-num" style="color:${ir>15?"var(--bad)":"var(--good)"}">${ir}%</div><div class="stat-label">Impulsivité</div></div>
   </div>
   <div class="grid g2" style="margin-top:16px">
-    <div class="card"><div class="card-title">Winrate par horaire <span class="mini">comportement temporel</span></div>${barChart(hb,{color:"#38e1c6"})}</div>
-    <div class="card"><div class="card-title">Winrate par jour de semaine</div>${barChart(wd,{color:"#5aa7ff"})}</div>
+    <div class="card"><div class="card-title">Winrate par horaire <span class="mini">comportement temporel</span></div>${barChart(hb,{color:"var(--accent)"})}</div>
+    <div class="card"><div class="card-title">Winrate par jour de semaine</div>${barChart(wd,{color:"var(--blue)"})}</div>
   </div>
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><div class="card-title">Qualité des setups (A / B / C)</div>
@@ -1254,10 +1345,10 @@ RENDER.progress=function(){
     <div class="page-sub">Discipline · exécution · constance · réduction des erreurs — la seule courbe qui compte vraiment.</div></div>
   </div>
   <div class="card"><div class="card-title">Discipline Score quotidien — 60 jours</div>
-    ${lineChart(scoredDays(addDays(t,-59),t).map(d=>d.total),{color:"#38e1c6",h:170})}
+    ${lineChart(scoredDays(addDays(t,-59),t).map(d=>d.total),{color:"var(--accent)",h:170})}
   </div>
   <div class="grid g2" style="margin-top:16px">
-    <div class="card"><div class="card-title">Moyenne hebdomadaire — 12 semaines</div>${lineChart(weeks,{color:"#9d8cff"})}</div>
+    <div class="card"><div class="card-title">Moyenne hebdomadaire — 12 semaines</div>${lineChart(weeks,{color:"var(--violet)"})}</div>
     <div class="card"><div class="card-title">30 derniers jours vs période précédente</div>
       <table class="tbl"><thead><tr><th>Indicateur</th><th>30 j</th><th>Précédent</th><th>Δ</th></tr></thead><tbody>
       ${cmp.map(([label,a,b,unit,inv])=>{
@@ -1392,22 +1483,70 @@ function renderChat(){
    PARAMÈTRES / DONNÉES
    ═══════════════════════════════════════════════════════════════ */
 function openSettings(){
+  normalizeSettings();
+  const ap=state.settings.appearance;
+  const ft=state.settings.features;
+  const curTheme=THEMES[ap.theme]||THEMES.basique;
+  const themeCards=Object.entries(THEMES).map(([id,t])=>`
+    <button class="theme-card${ap.theme===id?" on":""}" type="button" data-theme="${id}">
+      <span class="theme-swatches">${themeSwatches(t.vars)}</span>
+      <b>${esc(t.label)}</b>
+      <small>${esc(t.desc)}</small>
+    </button>`).join("");
+  const checkIcon=`<div class="box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#04231d" stroke-width="3.4"><path d="M20 6L9 17l-5-5"/></svg></div>`;
   const body=`
-    <div class="field"><label>Nom du trader</label><input type="text" id="setName" value="${esc(state.profile.name)}"></div>
-    <div class="field"><label>Plan de trading (une règle par ligne) — utilisé par le coach et les rappels</label>
-      <textarea id="setRules" rows="6">${esc(state.profile.rules.join("\n"))}</textarea>
+    <div class="settings-block">
+      <div class="settings-title">Identité & plan</div>
+      <div class="field"><label>Nom du trader</label><input type="text" id="setName" value="${esc(state.profile.name)}"></div>
+      <div class="field"><label>Plan de trading (une règle par ligne) — utilisé par le coach et les rappels</label>
+        <textarea id="setRules" rows="6">${esc(state.profile.rules.join("\n"))}</textarea>
+      </div>
     </div>
-    <div class="sep"></div>
-    <div class="field"><label>Clé API LLM (optionnel — mode coach avancé)</label>
-      <input type="password" id="setKey" placeholder="sk-…" value="${esc(state.settings.apiKey)}">
-      <div style="font-size:11px;color:var(--faint);margin-top:5px">Stockée uniquement dans votre navigateur. Sans clé, le moteur de règles local reste pleinement fonctionnel.</div>
+
+    <div class="settings-block">
+      <div class="settings-title">Apparence & personnalisation</div>
+      <div class="settings-help">Personnalise l'ambiance sans complexifier l'usage : un thème, quelques couleurs, une densité d'affichage.</div>
+      <div class="field"><label>Thèmes</label><div class="theme-grid" id="themeGrid">${themeCards}</div></div>
+      <div class="checkline${ap.custom?" done":""}" id="setCustom">${checkIcon}<span>Appliquer mes couleurs personnalisées</span></div>
+      <div class="color-grid">
+        <div class="field"><label>Accent principal</label><input type="color" id="setAccent" value="${ap.accent||curTheme.vars["--accent"]}"></div>
+        <div class="field"><label>Accent secondaire</label><input type="color" id="setAccent2" value="${ap.accent2||curTheme.vars["--accent2"]}"></div>
+        <div class="field"><label>Fond</label><input type="color" id="setBg" value="${ap.bg||curTheme.vars["--bg"]}"></div>
+        <div class="field"><label>Panneaux</label><input type="color" id="setPanel" value="${ap.panel||curTheme.vars["--panel"]}"></div>
+      </div>
+      <div class="grid g2">
+        <div class="field"><label>Densité</label>
+          <select id="setDensity"><option value="comfort"${ap.density!=="compact"?" selected":""}>Confort — respirant</option><option value="compact"${ap.density==="compact"?" selected":""}>Compact — plus d'infos à l'écran</option></select>
+        </div>
+        <div class="field"><label>Effets visuels</label>
+          <select id="setEffects"><option value="normal"${ap.effects!=="low"?" selected":""}>Normaux</option><option value="low"${ap.effects==="low"?" selected":""}>Discrets — moins de glow/animations</option></select>
+        </div>
+      </div>
+      <button class="btn sm" id="resetColors" type="button">Réinitialiser les couleurs du thème</button>
     </div>
-    <div class="grid g2">
-      <div class="field"><label>Modèle</label><input type="text" id="setModel" value="${esc(state.settings.model)}"></div>
-      <div class="field"><label>Endpoint (compatible OpenAI)</label><input type="text" id="setEp" value="${esc(state.settings.endpoint)}"></div>
+
+    <div class="settings-block">
+      <div class="settings-title">Interventions & rappels</div>
+      <div class="settings-help">Tout reste non-bloquant. Ces options contrôlent seulement les pop-ups automatiques.</div>
+      <div class="checkline${ft.contextualAlerts!==false?" done":""}" id="setCtxAlerts">${checkIcon}<span>Alertes contextuelles du calendrier</span></div>
+      <div class="checkline${ft.openingCoach!==false?" done":""}" id="setOpeningCoach">${checkIcon}<span>Message du coach à l'ouverture</span></div>
+      <div class="checkline${ft.dailyReport!==false?" done":""}" id="setDailyReport">${checkIcon}<span>Rappel du rapport quotidien à 20h</span></div>
     </div>
-    <div class="sep"></div>
-    <div class="field"><label>Données</label>
+
+    <div class="settings-block">
+      <div class="settings-title">Coach IA</div>
+      <div class="field"><label>Clé API LLM (optionnel — mode coach avancé)</label>
+        <input type="password" id="setKey" placeholder="sk-…" value="${esc(state.settings.apiKey)}">
+        <div style="font-size:11px;color:var(--faint);margin-top:5px">Stockée uniquement dans votre navigateur. Sans clé, le moteur de règles local reste pleinement fonctionnel.</div>
+      </div>
+      <div class="grid g2">
+        <div class="field"><label>Modèle</label><input type="text" id="setModel" value="${esc(state.settings.model)}"></div>
+        <div class="field"><label>Endpoint (compatible OpenAI)</label><input type="text" id="setEp" value="${esc(state.settings.endpoint)}"></div>
+      </div>
+    </div>
+
+    <div class="settings-block">
+      <div class="settings-title">Données</div>
       <div class="btn-row">
         <button class="btn sm" id="expJson">Exporter JSON</button>
         <button class="btn sm" id="impJson">Importer JSON</button>
@@ -1417,11 +1556,36 @@ function openSettings(){
       </div>
       <input type="file" id="impFile" accept="application/json" style="display:none">
     </div>`;
-  const close=openModal("Paramètres",body,`<button class="btn primary" id="saveSet">Enregistrer</button>`);
+  const close=openModal("Paramètres",body,`<button class="btn" id="cancelSet">Annuler</button><button class="btn primary" id="saveSet">Enregistrer</button>`,true);
+  let selTheme=ap.theme;
+  let useCustom=!!ap.custom;
+  let ctxAlerts=ft.contextualAlerts!==false;
+  let openingCoach=ft.openingCoach!==false;
+  let dailyReport=ft.dailyReport!==false;
   const dl=(name,content,type)=>{
     const b=new Blob([content],{type});const u=URL.createObjectURL(b);
     const a=document.createElement("a");a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);
   };
+  const setDone=(id,v)=>$(id).classList.toggle("done",v);
+  const setThemeInputs=id=>{
+    const t=THEMES[id]||THEMES.basique;
+    $("#setAccent").value=t.vars["--accent"];
+    $("#setAccent2").value=t.vars["--accent2"];
+    $("#setBg").value=t.vars["--bg"];
+    $("#setPanel").value=t.vars["--panel"];
+  };
+  $$("#themeGrid .theme-card").forEach(c=>c.onclick=()=>{
+    selTheme=c.dataset.theme;
+    $$("#themeGrid .theme-card").forEach(x=>x.classList.toggle("on",x===c));
+    if(!useCustom)setThemeInputs(selTheme);
+  });
+  $("#setCustom").onclick=()=>{useCustom=!useCustom;setDone("#setCustom",useCustom);};
+  ["setAccent","setAccent2","setBg","setPanel"].forEach(id=>$("#"+id).oninput=()=>{useCustom=true;setDone("#setCustom",true);});
+  $("#resetColors").onclick=()=>{setThemeInputs(selTheme);useCustom=false;setDone("#setCustom",false);};
+  $("#setCtxAlerts").onclick=()=>{ctxAlerts=!ctxAlerts;setDone("#setCtxAlerts",ctxAlerts);};
+  $("#setOpeningCoach").onclick=()=>{openingCoach=!openingCoach;setDone("#setOpeningCoach",openingCoach);};
+  $("#setDailyReport").onclick=()=>{dailyReport=!dailyReport;setDone("#setDailyReport",dailyReport);};
+  $("#cancelSet").onclick=close;
   $("#expJson").onclick=()=>dl("kairos-export-"+todayISO()+".json",JSON.stringify(state,null,2),"application/json");
   $("#expCsv").onclick=()=>{
     const head="date;time;mode;dayType;setup;grade;emotion;energy;planRespected;impulsive;pnl;context;notes";
@@ -1432,15 +1596,15 @@ function openSettings(){
   $("#impFile").onchange=ev=>{
     const f=ev.target.files[0];if(!f)return;
     const rd=new FileReader();
-    rd.onload=()=>{try{const j=JSON.parse(rd.result);if(j.entries&&j.days){state=j;saveState();close();refresh();toast("Données importées.","good");}else toast("Fichier invalide.","bad");}catch(e){toast("JSON illisible.","bad");}};
+    rd.onload=()=>{try{const j=JSON.parse(rd.result);if(j.entries&&j.days){state=j;normalizeSettings();applyAppearance();saveState();close();refresh();toast("Données importées.","good");}else toast("Fichier invalide.","bad");}catch(e){toast("JSON illisible.","bad");}};
     rd.readAsText(f);
   };
-  $("#reseed").onclick=()=>{if(confirm("Recharger les données de démonstration ? Vos données actuelles seront remplacées.")){seedDemo();close();refresh();toast("Démo rechargée.","good");}};
+  $("#reseed").onclick=()=>{if(confirm("Recharger les données de démonstration ? Vos données actuelles seront remplacées.")){seedDemo();normalizeSettings();applyAppearance();saveState();close();refresh();toast("Démo rechargée.","good");}};
   $("#wipe").onclick=async()=>{
     if(!confirm("Effacer TOUTES les données (y compris sur Supabase) et repartir de zéro ? Cette action est irréversible."))return;
     const oldEntryIds=state.entries.map(x=>x.id);
     const oldDayIsos=Object.keys(state.days);
-    state=freshState();state.settings.demo=false;
+    state=freshState();state.settings.demo=false;normalizeSettings();applyAppearance();
     await Promise.all([
       ...oldEntryIds.map(id=>deleteEntryRemote(id)),
       ...oldDayIsos.map(iso=>deleteDayRemote(iso)),
@@ -1453,6 +1617,13 @@ function openSettings(){
     state.settings.apiKey=$("#setKey").value.trim();
     state.settings.model=$("#setModel").value.trim()||"gpt-4o-mini";
     state.settings.endpoint=$("#setEp").value.trim()||"https://api.openai.com/v1/chat/completions";
+    state.settings.appearance={
+      theme:selTheme,custom:useCustom,
+      accent:$("#setAccent").value,accent2:$("#setAccent2").value,bg:$("#setBg").value,panel:$("#setPanel").value,
+      density:$("#setDensity").value,effects:$("#setEffects").value,
+    };
+    state.settings.features={contextualAlerts:ctxAlerts,openingCoach,dailyReport};
+    normalizeSettings();applyAppearance();
     saveState();close();refresh();toast("Paramètres enregistrés.","good");
   };
 }
@@ -1490,7 +1661,8 @@ async function boot(){
   }
 
   if(!state.ui)state.ui={calMonth:todayISO().slice(0,7)};
-  if(!state.settings)state.settings={apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:false};
+  normalizeSettings();
+  applyAppearance();
 
   buildSidebar();
   tickClock();setInterval(tickClock,1000);
@@ -1500,6 +1672,7 @@ async function boot(){
   $("#btnLogout").onclick=logout;
   // Intervention proactive du coach à l'ouverture (non bloquante)
   setTimeout(()=>{
+    if(!featureOn("openingCoach"))return;
     const ins=proactiveInsights();
     if(ins.length)toast(`<b>Coach KAIROS ·</b> ${ins[0].txt}`,ins[0].sev,12000);
     else toast("<b>Coach KAIROS ·</b> Processus nominal. Bonne session — le plan d'abord, le trade ensuite.","good",8000);
@@ -1507,7 +1680,7 @@ async function boot(){
   // Rapport quotidien automatique en fin de session
   setInterval(()=>{
     const d=now();
-    if(d.getHours()===20&&d.getMinutes()===0&&d.getSeconds()<2&&!window._drSent){
+    if(featureOn("dailyReport")&&d.getHours()===20&&d.getMinutes()===0&&d.getSeconds()<2&&!window._drSent){
       window._drSent=true;
       toast(`<b>Rapport quotidien disponible.</b> ${fmtFR(todayISO())} — ouvrez le Coach IA pour la synthèse.`,"info",15000);
     }
