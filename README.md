@@ -35,7 +35,8 @@ L'application doit rester rapide, lisible et non prise de tête. Les nouvelles o
 | **Profil trader** | Identité quantifiée : score global, streaks, drawdown, forces/faiblesses. |
 | **Coach IA hybride** | Moteur local de règles + option LLM connectée si clé API configurée. |
 | **Paramètres & données** | Profil, plan de trading, clé API, export/import JSON, export CSV, réinitialisation. |
-| **Responsive mobile/tablette** | Interface adaptée aux petits écrans avec navigation mobile et modales optimisées. |
+| **Mode vacances** | Met le terminal en pause : scoring, coach proactif, rappels et progression sont neutralisés pendant une période de repos. |
+| **Responsive mobile/tablette** | Interface adaptée aux petits écrans avec navigation mobile, modales optimisées et correctif paysage mobile. |
 
 ---
 
@@ -79,6 +80,24 @@ Options ajoutées :
 - **Effets discrets** : moins de glow, moins de flou, moins d'animations.
 
 Ces options permettent d'adapter KAIROS selon le support, la fatigue visuelle ou la préférence personnelle.
+
+---
+
+## 🏖️ Mode vacances
+
+Le **mode vacances** est disponible dans les paramètres.
+
+Quand il est activé, KAIROS met volontairement le terminal en pause :
+
+- le score du jour est neutralisé ;
+- le coach proactif devient silencieux ;
+- les alertes automatiques et le rappel quotidien sont suspendus ;
+- les jours de vacances sont ignorés dans la progression ;
+- les streaks ne sont pas cassés par une pause volontaire.
+
+L'objectif est simple : permettre une vraie période de récupération sans pression de score, sans fausser les statistiques et sans donner l'impression d'une régression.
+
+Le mode vacances ne supprime aucune donnée. Il peut être désactivé à tout moment depuis le dashboard ou les paramètres.
 
 ---
 
@@ -162,6 +181,24 @@ js/auth.js              Authentification
 js/supabase-client.js   Client Supabase
 README.md               Présentation et roadmap
 ```
+
+---
+
+## 🗄️ Note Supabase pour le mode vacances
+
+Aucune nouvelle table n'est nécessaire. Le mode vacances est stocké dans `profile.settings.vacation` :
+
+```json
+{
+  "enabled": false,
+  "since": null,
+  "periods": []
+}
+```
+
+- `enabled` indique si le mode est actif.
+- `since` conserve la date de début de la pause active.
+- `periods` conserve les périodes terminées afin d'ignorer ces jours dans les calculs futurs.
 
 ---
 
