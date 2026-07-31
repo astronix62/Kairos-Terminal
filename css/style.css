@@ -430,3 +430,78 @@ body.low-effects *{transition-duration:.08s!important}
 .brand .logo circle:nth-child(1),.brand .logo line{stroke:var(--accent)}
 .brand .logo circle:nth-child(2){stroke:var(--accent2)}
 .brand .logo circle:nth-child(3){fill:var(--accent)}
+
+/* ---------- Mode vacances ---------- */
+.vacation-card{border-color:rgba(56,225,198,.28);background:linear-gradient(180deg,var(--panel) 0%,var(--bg2) 100%)}
+.vacation-hero{display:flex;gap:18px;align-items:flex-start}
+.vacation-icon{width:56px;height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:30px;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(56,225,198,.28)}
+.vacation-list{display:flex;gap:8px;flex-wrap:wrap}
+.vacation-list span{font-size:11.5px;color:var(--txt2);border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:6px 10px}
+.vacation-note{font-size:12px;line-height:1.55;color:var(--muted);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:9px}
+
+/* ---------- Correctif téléphone en paysage ----------
+   Les téléphones en paysage dépassent souvent 720px de large : sans ce
+   breakpoint, l'interface mélangeait layout desktop et navigation mobile. */
+@media(max-height:560px) and (orientation:landscape), (max-width:920px) and (orientation:landscape) and (max-height:620px){
+  html,body{height:auto;min-height:100%;overflow-x:hidden}
+  body{overflow-y:auto;font-size:13px;background-attachment:fixed}
+  .app{display:block;height:auto;min-height:100vh;min-height:100dvh;padding-bottom:0}
+  .topbar{position:sticky;top:0;min-height:48px;padding:5px max(10px,env(safe-area-inset-right)) 5px max(10px,env(safe-area-inset-left));gap:8px;justify-content:flex-start;z-index:120}
+  .brand{gap:8px;min-width:0;flex:1 1 auto}
+  .brand .logo{width:22px;height:22px;flex:0 0 auto}
+  .brand .name{font-size:13px;letter-spacing:.1em;white-space:nowrap}
+  .brand .tag,.clockbox{display:none}
+  .phasebox{display:flex;font-size:10px;padding:5px 8px;max-width:40vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top-actions{margin-left:auto;gap:6px;flex:0 0 auto}
+  .icon-btn{width:38px;height:38px;border-radius:10px}
+  .sidebar{position:fixed;left:0;right:0;bottom:0;height:calc(58px + env(safe-area-inset-bottom));padding:6px max(8px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));border-right:0;border-top:1px solid var(--line);background:rgba(8,13,23,.96);backdrop-filter:blur(12px);z-index:110;display:flex;flex-direction:row;gap:5px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  .sidebar::-webkit-scrollbar{display:none}
+  .side-foot{display:none}
+  .nav-item{flex:0 0 72px;min-width:72px;min-height:46px;justify-content:center;align-items:center;flex-direction:column;gap:2px;padding:5px 4px;border-radius:11px;font-size:9.5px;line-height:1.05;text-align:center;white-space:nowrap}
+  .nav-item span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .nav-item svg{width:17px;height:17px}
+  .main{overflow:visible;padding:12px 12px calc(74px + env(safe-area-inset-bottom));scroll-behavior:auto}
+  .page-head{align-items:flex-start;margin-bottom:12px;gap:10px}
+  .page-title{font-size:18px;line-height:1.15}
+  .page-sub{font-size:11.5px;line-height:1.35}
+  .page-head > .btn-row{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+  .page-head > .btn-row .btn{width:100%;justify-content:center;min-height:38px;padding:8px 9px;font-size:11.5px}
+  .grid{gap:10px}
+  .g-dash,.g3,.g4,.g2{grid-template-columns:1fr}
+  .card{padding:13px;border-radius:12px}
+  .card.tight{padding:12px}
+  .card-title{font-size:10px;margin-bottom:9px}
+  .btn,.chip{min-height:40px;padding:8px 11px;font-size:12px;border-radius:10px}
+  .btn.sm{min-height:34px;padding:7px 9px;font-size:11px}
+  .checkline{min-height:40px;padding:8px 10px;font-size:12.3px}
+  .ring-wrap{gap:12px}
+  .ring-center svg[width="148"],.ring-center svg[width="150"]{width:108px;height:108px}
+  .ring-center .val{font-size:23px}
+  .cal-head{flex-direction:row;align-items:center;gap:10px}
+  .cal-head .btn-row{display:flex;flex-wrap:wrap;justify-content:flex-end}
+  .cal-grid{gap:4px}
+  .cal-cell{min-height:52px;padding:5px 3px;border-radius:8px;align-items:center;text-align:center;gap:2px}
+  .cal-cell .dtype{font-size:0;min-height:8px;justify-content:center}
+  .cal-cell .dtype i{width:7px;height:7px}
+  .cal-cell .cscore{font-size:8.5px;line-height:1}
+  .entry{padding:12px;margin-bottom:9px}
+  .chat{height:calc(100dvh - 150px);min-height:240px}
+  .chat-input{gap:7px;position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--panel) 28%);padding-top:10px}
+  .toasts{top:auto;left:12px;right:12px;bottom:calc(66px + env(safe-area-inset-bottom));max-width:none}
+  .modal-bg{align-items:stretch;justify-content:center;padding:0;background:rgba(3,6,12,.78)}
+  .modal{max-width:none;width:100%;max-height:100dvh;border-radius:0;border-left:0;border-right:0;border-bottom:0;display:flex;flex-direction:column;overflow:hidden}
+  .modal.wide{max-width:none}
+  .modal-head{padding:10px 14px}
+  .modal-head h3{font-size:13.5px;line-height:1.2}
+  .modal-body{padding:12px 14px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .modal-foot{padding:9px 14px calc(9px + env(safe-area-inset-bottom));gap:7px;justify-content:stretch;flex-wrap:wrap}
+  .modal-foot .btn{flex:1 1 120px;min-height:38px}
+  .theme-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .theme-card{min-height:82px;padding:8px}
+  .theme-card small{display:none}
+  .color-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .vacation-hero{gap:12px}
+  .vacation-icon{width:46px;height:46px;border-radius:14px;font-size:25px}
+}
+.cal-cell.vacation-day{background:linear-gradient(180deg,rgba(56,225,198,.08),var(--panel));border-color:rgba(56,225,198,.22)}
+.cal-cell.vacation-day .dnum{color:var(--accent)}
