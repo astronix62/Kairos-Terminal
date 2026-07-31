@@ -78,6 +78,11 @@ const DEFAULT_FEATURES={
   openingCoach:true,
   dailyReport:true,
 };
+const DEFAULT_VACATION={
+  enabled:false,
+  since:null,
+  periods:[],
+};
 const THEMES={
   basique:{label:"basique",desc:"Le thème original KAIROS : sombre, turquoise, analytique.",vars:{
     "--bg":"#060a12","--bg2":"#0a101c","--panel":"#0d1524","--panel2":"#111c30","--panel3":"#16233c",
@@ -118,10 +123,13 @@ const THEMES={
 };
 function mergeDefaults(obj,defs){return {...defs,...(obj||{})};}
 function normalizeSettings(){
-  const base={apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:false,appearance:{...DEFAULT_APPEARANCE},features:{...DEFAULT_FEATURES}};
+  const base={apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:false,appearance:{...DEFAULT_APPEARANCE},features:{...DEFAULT_FEATURES},vacation:{...DEFAULT_VACATION}};
   state.settings={...base,...(state.settings||{})};
   state.settings.appearance=mergeDefaults(state.settings.appearance,DEFAULT_APPEARANCE);
   state.settings.features=mergeDefaults(state.settings.features,DEFAULT_FEATURES);
+  state.settings.vacation=mergeDefaults(state.settings.vacation,DEFAULT_VACATION);
+  if(!Array.isArray(state.settings.vacation.periods))state.settings.vacation.periods=[];
+  if(state.settings.vacation.enabled&&!state.settings.vacation.since)state.settings.vacation.since=todayISO();
   if(!THEMES[state.settings.appearance.theme])state.settings.appearance.theme="basique";
 }
 function hexToRgb(hex){
@@ -148,7 +156,35 @@ function applyAppearance(){
   const meta=document.querySelector('meta[name="theme-color"]');
   if(meta)meta.setAttribute("content",ap.custom&&ap.bg?ap.bg:theme.vars["--bg"]);
 }
-function featureOn(key){return !state||!state.settings||!state.settings.features||state.settings.features[key]!==false;}
+function vacationActive(){return !!(state&&state.settings&&state.settings.vacation&&state.settings.vacation.enabled);}
+function isVacationDay(iso){
+  if(!state||!state.settings)return false;
+  const v=mergeDefaults(state.settings.vacation,DEFAULT_VACATION);
+  if(v.enabled&&v.since&&iso>=v.since)return true;
+  return (v.periods||[]).some(p=>p&&p.from&&p.to&&iso>=p.from&&iso<=p.to);
+}
+function vacationLabel(){
+  const v=state&&state.settings?mergeDefaults(state.settings.vacation,DEFAULT_VACATION):DEFAULT_VACATION;
+  return v.enabled&&v.since?`depuis ${fmtFR(v.since)}`:"actif";
+}
+function closeVacationPeriod(v){
+  const periods=[...(v.periods||[])];
+  const end=addDays(todayISO(),-1);
+  if(v.since&&v.since<=end&&!periods.some(p=>p.from===v.since&&p.to===end))periods.push({from:v.since,to:end});
+  return periods.slice(-30);
+}
+function finishVacationMode(){
+  normalizeSettings();
+  const v=state.settings.vacation;
+  if(!v.enabled)return;
+  state.settings.vacation={...v,enabled:false,since:null,periods:closeVacationPeriod(v)};
+  saveState();applyAppearance();tickClock();refresh();
+  toast("Mode vacances désactivé — KAIROS reprend le suivi à partir d'aujourd'hui.","good");
+}
+function featureOn(key){
+  if(vacationActive()&&["contextualAlerts","openingCoach","dailyReport"].includes(key))return false;
+  return !state||!state.settings||!state.settings.features||state.settings.features[key]!==false;
+}
 function themeSwatches(vars){
   return ["--bg","--panel","--accent","--accent2"].map(k=>`<i style="background:${vars[k]}"></i>`).join("");
 }
@@ -157,7 +193,7 @@ function freshState(){
   return{
     profile:{name:"Trader",rules:DEFAULT_RULES.slice()},
     days:{}, entries:[],
-    settings:{apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:true,appearance:{...DEFAULT_APPEARANCE},features:{...DEFAULT_FEATURES}},
+    settings:{apiKey:"",model:"gpt-4o-mini",endpoint:"https://api.openai.com/v1/chat/completions",demo:true,appearance:{...DEFAULT_APPEARANCE},features:{...DEFAULT_FEATURES},vacation:{...DEFAULT_VACATION}},
     ui:{calMonth:todayISO().slice(0,7)},
   };
 }
@@ -275,6 +311,7 @@ function dayType(iso){
   return es.some(e=>e.mode==="trading")?"trading":"analyse";
 }
 function computeDayScore(iso){
+  if(isVacationDay(iso))return null;
   const day=state.days[iso]; const es=entriesOn(iso);
   const type=dayType(iso);
   if(!day&&!es.length)return null;
@@ -333,7 +370,7 @@ function monthScore(ym){
 /* ═══════════════════════════════════════════════════════════════
    STATISTIQUES COMPORTEMENTALES
    ═══════════════════════════════════════════════════════════════ */
-function allTrades(){return state.entries.filter(e=>e.mode==="trading"&&e.pnl!=null);}
+function allTrades(){return state.entries.filter(e=>e.mode==="trading"&&e.pnl!=null&&!isVacationDay(e.date));}
 function winRate(list){const l=list.length?list:allTrades();return l.length?Math.round(100*l.filter(e=>e.pnl>0).length/l.length):null;}
 function profitFactor(){
   const l=allTrades();
@@ -368,6 +405,7 @@ function streaks(){
   // série de jours consécutifs (en partant d'aujourd'hui) avec score>=70 et pas d'impulsion
   let cur=0,t= todayISO();
   while(true){
+    if(isVacationDay(t)){t=addDays(t,-1);continue;}
     const s=computeDayScore(t);
     const bad=entriesOn(t).some(e=>e.impulsive);
     if(s&&s.total>=70&&!bad){cur++;t=addDays(t,-1);}else break;
@@ -448,6 +486,7 @@ function strengthsWeaknesses(){
    TEMPS RÉEL — horloge, phase de session, conscience contextuelle
    ═══════════════════════════════════════════════════════════════ */
 function sessionPhase(d){
+  if(vacationActive())return"Mode vacances — cockpit en pause";
   const h=d.getHours(),wd=d.getDay();
   if(wd===0||wd===6)return"Marchés fermés — récupération & préparation";
   if(h<7)return"Pré-ouverture — préparation mentale";
@@ -571,6 +610,7 @@ function monthlyReport(){
   return r;
 }
 function proactiveInsights(){
+  if(vacationActive())return[];
   const out=[];const t=todayISO();const d=now();
   // contexte temps réel
   const type=dayType(t);
@@ -597,6 +637,7 @@ function proactiveInsights(){
   return out;
 }
 function suggestedDayType(){
+  if(vacationActive())return{type:"repos",why:"Mode vacances actif : KAIROS met volontairement le cockpit, les alertes et la progression en pause."};
   const d=now();const t=todayISO();const wd=d.getDay();
   const st=streaks();
   const recentTrades=scoredDays(addDays(t,-3),addDays(t,-1)).filter(x=>x.type==="trading").length;
@@ -609,6 +650,7 @@ function suggestedDayType(){
 async function coachReply(userMsg){
   const key=state.settings.apiKey.trim();
   const m=userMsg.toLowerCase();
+  if(vacationActive())return mdToHtml(`#### Mode vacances actif\nKAIROS est volontairement en pause : pas de rapport automatique, pas de pression de score, pas d'analyse de progression. Tu peux consulter tes données, mais le cockpit reprendra quand tu désactiveras le mode vacances dans les paramètres.`);
   // Mode LLM distant (optionnel)
   if(key){
     try{
@@ -801,6 +843,44 @@ function enhanceResponsiveTables(root=document){
   });
 }
 
+function vacationPauseHTML(title="Mode vacances actif",text="KAIROS met volontairement le cockpit en pause : scores, alertes automatiques et progression ne sont plus recalculés pendant cette période."){
+  const v=mergeDefaults(state.settings.vacation,DEFAULT_VACATION);
+  return `<div class="page-head">
+    <div><div class="page-title">${title}</div>
+    <div class="page-sub">${fmtFull(todayISO())} · ${sessionPhase(now())}</div></div>
+    <div class="btn-row"><button class="btn primary" id="endVacation">Reprendre KAIROS</button><button class="btn" id="vacSettings">Paramètres</button></div>
+  </div>
+  <div class="card vacation-card">
+    <div class="card-title">Terminal en pause <span class="mini">${v.since?`depuis ${fmtFR(v.since)}`:"mode actif"}</span></div>
+    <div class="vacation-hero">
+      <div class="vacation-icon">☾</div>
+      <div>
+        <div style="font-size:15px;font-weight:750;margin-bottom:6px">Récupération sans pression de score.</div>
+        <div style="font-size:13px;color:var(--txt2);line-height:1.65">${text}</div>
+        <div class="sep"></div>
+        <div class="vacation-list">
+          <span>Score du jour neutralisé</span>
+          <span>Progression et streaks préservés</span>
+          <span>Coach proactif silencieux</span>
+          <span>Rappels automatiques désactivés</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><div class="card-title">À savoir</div><div style="font-size:13px;line-height:1.7;color:var(--txt2)">Les données existantes restent intactes. Les jours de vacances sont ignorés par le scoring pour éviter de casser artificiellement ta progression.</div></div>
+    <div class="card"><div class="card-title">Accès rapide</div><div class="btn-row"><button class="btn" id="vacJournal">Consulter le journal</button><button class="btn" id="vacCalendar">Calendrier</button></div></div>
+  </div>`;
+}
+function renderVacationPause(view,title,text){
+  $(view).innerHTML=vacationPauseHTML(title,text);
+  const end=$("#endVacation"),set=$("#vacSettings"),jou=$("#vacJournal"),cal=$("#vacCalendar");
+  if(end)end.onclick=finishVacationMode;
+  if(set)set.onclick=openSettings;
+  if(jou)jou.onclick=()=>showView("journal");
+  if(cal)cal.onclick=()=>showView("calendar");
+}
+
 /* ═══════════════════════════════════════════════════════════════
    VUES
    ═══════════════════════════════════════════════════════════════ */
@@ -808,6 +888,7 @@ const RENDER={};
 
 /* ---------- DASHBOARD ---------- */
 RENDER.dashboard=function(){
+  if(vacationActive())return renderVacationPause("#view-dashboard","Mode vacances actif","Le dashboard est volontairement allégé : pas de score du jour, pas de checklist obligatoire, pas de pression. Reprends KAIROS quand tu veux relancer le suivi.");
   const t=todayISO();const d=now();
   const s=computeDayScore(t)||{total:0,process:0,exec:0,result:0};
   const day=state.days[t];const type=dayType(t);
@@ -941,12 +1022,13 @@ RENDER.calendar=function(){
     const iso=addDays(gridStart,i);
     const inMonth=iso.slice(0,7)===ym;
     const type=dayType(iso);
+    const vacDay=isVacationDay(iso);
     const s=computeDayScore(iso);
     const cls=type?DAY_TYPES[type].cls:"";
-    cells+=`<div class="cal-cell${inMonth?"":" out"}${iso===todayISO()?" today":""}" data-date="${iso}">
+    cells+=`<div class="cal-cell${inMonth?"":" out"}${iso===todayISO()?" today":""}${vacDay?" vacation-day":""}" data-date="${iso}">
       <div class="dnum">${+iso.slice(8)}</div>
-      ${type?`<div class="dtype ${cls}"><i></i>${DAY_TYPES[type].label}</div>`:`<div class="dtype" style="color:var(--faint)">—</div>`}
-      ${s?`<div class="cscore" style="color:${scoreColor(s.total)}">● ${s.total}</div>`:``}
+      ${vacDay?`<div class="dtype type-repos"><i></i>Pause</div>`:(type?`<div class="dtype ${cls}"><i></i>${DAY_TYPES[type].label}</div>`:`<div class="dtype" style="color:var(--faint)">—</div>`)}
+      ${!vacDay&&s?`<div class="cscore" style="color:${scoreColor(s.total)}">● ${s.total}</div>`:``}
     </div>`;
   }
   $("#view-calendar").innerHTML=`
@@ -1239,6 +1321,7 @@ function openEntryModal(mode,date,existing){
 
 /* ---------- SCORING ---------- */
 RENDER.scoring=function(){
+  if(vacationActive())return renderVacationPause("#view-scoring","Scoring en pause","Le Discipline Score ne se met pas à jour pendant le mode vacances. Les jours concernés sont neutralisés pour ne pas déformer tes moyennes.");
   const t=todayISO();
   const s=computeDayScore(t);
   const wk=startOfWeek(t);
@@ -1285,6 +1368,7 @@ RENDER.scoring=function(){
 
 /* ---------- STATISTIQUES ---------- */
 RENDER.stats=function(){
+  if(vacationActive())return renderVacationPause("#view-stats","Statistiques en pause","Les analyses comportementales automatiques sont suspendues. Tu peux toujours consulter ton journal, mais KAIROS évite d'interpréter une période de repos.");
   const tr=allTrades();
   const wr=winRate(tr),pf=profitFactor(),pr=planRespectRate(),ir=impulsiveRate();
   const hb=byHourBuckets().map(b=>({...b,warn:b.label.startsWith("16")||b.label.startsWith("18")}));
@@ -1323,6 +1407,7 @@ RENDER.stats=function(){
 
 /* ---------- PROGRESSION ---------- */
 RENDER.progress=function(){
+  if(vacationActive())return renderVacationPause("#view-progress","Progression en pause","La courbe de progression est figée pendant les vacances. Les streaks ne sont pas pénalisés par une pause volontaire.");
   const t=todayISO();
   const s30=scoredDays(addDays(t,-29),t),sp=scoredDays(addDays(t,-59),addDays(t,-30));
   const a30=s30.length?Math.round(avg(s30.map(d=>d.total))):null;
@@ -1422,6 +1507,7 @@ RENDER.profile=function(){
 /* ---------- COACH IA ---------- */
 let chatLog=[];
 RENDER.coach=function(){
+  if(vacationActive())return renderVacationPause("#view-coach","Coach IA silencieux","Le coach proactif est désactivé pendant les vacances. Tu peux reprendre KAIROS à tout moment depuis ce bouton ou les paramètres.");
   const ins=proactiveInsights();
   $("#view-coach").innerHTML=`
   <div class="page-head">
@@ -1486,6 +1572,7 @@ function openSettings(){
   normalizeSettings();
   const ap=state.settings.appearance;
   const ft=state.settings.features;
+  const vac=state.settings.vacation;
   const curTheme=THEMES[ap.theme]||THEMES.basique;
   const themeCards=Object.entries(THEMES).map(([id,t])=>`
     <button class="theme-card${ap.theme===id?" on":""}" type="button" data-theme="${id}">
@@ -1534,6 +1621,13 @@ function openSettings(){
     </div>
 
     <div class="settings-block">
+      <div class="settings-title">Mode vacances</div>
+      <div class="settings-help">Met le terminal en pause : scoring du jour, coach proactif, alertes et progression sont neutralisés. Les streaks ne sont pas cassés par cette pause volontaire.</div>
+      <div class="checkline${vac.enabled?" done":""}" id="setVacation">${checkIcon}<span>Activer le mode vacances</span></div>
+      <div class="vacation-note" id="vacationNote">${vac.enabled&&vac.since?`Actif depuis ${fmtFR(vac.since)}. Désactive-le pour reprendre KAIROS à partir d'aujourd'hui.`:"Le mode s'activera à partir d'aujourd'hui et restera actif jusqu'à désactivation."}</div>
+    </div>
+
+    <div class="settings-block">
       <div class="settings-title">Coach IA</div>
       <div class="field"><label>Clé API LLM (optionnel — mode coach avancé)</label>
         <input type="password" id="setKey" placeholder="sk-…" value="${esc(state.settings.apiKey)}">
@@ -1562,6 +1656,7 @@ function openSettings(){
   let ctxAlerts=ft.contextualAlerts!==false;
   let openingCoach=ft.openingCoach!==false;
   let dailyReport=ft.dailyReport!==false;
+  let vacationOn=!!vac.enabled;
   const dl=(name,content,type)=>{
     const b=new Blob([content],{type});const u=URL.createObjectURL(b);
     const a=document.createElement("a");a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);
@@ -1585,6 +1680,11 @@ function openSettings(){
   $("#setCtxAlerts").onclick=()=>{ctxAlerts=!ctxAlerts;setDone("#setCtxAlerts",ctxAlerts);};
   $("#setOpeningCoach").onclick=()=>{openingCoach=!openingCoach;setDone("#setOpeningCoach",openingCoach);};
   $("#setDailyReport").onclick=()=>{dailyReport=!dailyReport;setDone("#setDailyReport",dailyReport);};
+  $("#setVacation").onclick=()=>{
+    vacationOn=!vacationOn;setDone("#setVacation",vacationOn);
+    const note=$("#vacationNote");
+    if(note)note.textContent=vacationOn?`Le mode vacances sera actif à partir d'aujourd'hui. Les scores et rappels seront mis en pause.`:`Le cockpit reprendra à partir d'aujourd'hui après enregistrement.`;
+  };
   $("#cancelSet").onclick=close;
   $("#expJson").onclick=()=>dl("kairos-export-"+todayISO()+".json",JSON.stringify(state,null,2),"application/json");
   $("#expCsv").onclick=()=>{
@@ -1623,6 +1723,12 @@ function openSettings(){
       density:$("#setDensity").value,effects:$("#setEffects").value,
     };
     state.settings.features={contextualAlerts:ctxAlerts,openingCoach,dailyReport};
+    const prevVac=mergeDefaults(state.settings.vacation,DEFAULT_VACATION);
+    if(vacationOn){
+      state.settings.vacation={...prevVac,enabled:true,since:prevVac.enabled&&prevVac.since?prevVac.since:todayISO(),periods:prevVac.periods||[]};
+    }else{
+      state.settings.vacation={...prevVac,enabled:false,since:null,periods:prevVac.enabled?closeVacationPeriod(prevVac):(prevVac.periods||[])};
+    }
     normalizeSettings();applyAppearance();
     saveState();close();refresh();toast("Paramètres enregistrés.","good");
   };
