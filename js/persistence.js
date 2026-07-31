@@ -79,6 +79,7 @@ async function hydrateStateFromSupabase() {
       endpoint: (profileData.settings && profileData.settings.endpoint) || 'https://api.openai.com/v1/chat/completions',
       appearance: (profileData.settings && profileData.settings.appearance) || undefined,
       features: (profileData.settings && profileData.settings.features) || undefined,
+      vacation: (profileData.settings && profileData.settings.vacation) || undefined,
       demo: false,
     },
     ui: (profileData.ui_state && Object.keys(profileData.ui_state).length) ? profileData.ui_state : { calMonth: todayISO().slice(0, 7) },
@@ -120,6 +121,7 @@ async function saveState() {
         endpoint: state.settings.endpoint,
         appearance: state.settings.appearance,
         features: state.settings.features,
+        vacation: state.settings.vacation,
       },
       ui_state: state.ui,
     }).eq('user_id', currentUserId);
